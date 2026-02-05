@@ -1,0 +1,9 @@
+its/sorter/ArtistParserService.class
+module-info.class
+its/sorter/ExcelExportService.class
+its/sorter/ArtistSorterApp.class
+its/sorter/ImportResult.class
+its/sorter/ExcelImportService.class
+its/sorter/ArtistSorterApp$1.class
+its/sorter/Row.class
+its/sorter/CandidateTypeCell.class
