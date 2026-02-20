@@ -19,7 +19,7 @@ public class ExcelImportService {
             return new ImportResult(sorted, candidates);
         }
     }
-
+    
     private List<Row> readSorted(Sheet sheet) {
         if (sheet == null) return List.of();
 
