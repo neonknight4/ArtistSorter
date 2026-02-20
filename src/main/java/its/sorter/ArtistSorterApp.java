@@ -58,13 +58,24 @@ public class ArtistSorterApp extends Application {
         left.setPadding(new Insets(10));
         left.setPrefWidth(350);
 
-        VBox right = new VBox(10,
-                new Label("Sorted"), autoTable,
-                new Label("Candidates"), candidateTable
-        );
-        right.setPadding(new Insets(10));
+        Label sortedLbl = new Label("Sorted");
+        Label candLbl = new Label("Candidates");
 
-        Scene scene = new Scene(new HBox(left, right), 1100, 650);
+        VBox right = new VBox(10, sortedLbl, autoTable, candLbl, candidateTable);
+        right.setPadding(new Insets(10));
+        right.setFillWidth(true);
+
+// 🔥 KLJUČNO — omogući vertikalno širenje tabela
+        VBox.setVgrow(autoTable, Priority.ALWAYS);
+        VBox.setVgrow(candidateTable, Priority.ALWAYS);
+
+        HBox root = new HBox(left, right);
+
+// 🔥 KLJUČNO — desni panel uzima sav prostor
+        HBox.setHgrow(right, Priority.ALWAYS);
+
+        Scene scene = new Scene(root, 1100, 650);
+
         stage.setTitle("Artist Sorter");
         stage.setScene(scene);
         stage.show();
@@ -133,8 +144,70 @@ public class ArtistSorterApp extends Application {
 
             ImportResult result = importService.importFile(file);
 
+            // prvo postavi sve
             autoSorted.setAll(result.sorted());
-            candidates.setAll(result.candidates());
+
+            List<Row> remainingCandidates = new ArrayList<>();
+
+            for (Row r : result.candidates()) {
+
+                String artist = r.getArtist();
+
+                if (artist != null
+                        && artist.toLowerCase(Locale.ROOT).startsWith("the ")) {
+
+                    String withoutThe = artist.substring(4).trim();
+                    String letter = withoutThe.substring(0, 1).toUpperCase(Locale.ROOT);
+
+                    autoSorted.add(new Row(letter, artist, r.getSong(), "BEND"));
+
+                } else {
+                    remainingCandidates.add(r);
+                }
+            }
+
+            candidates.setAll(remainingCandidates);
+
+            // 🔥 sortiraj nakon svega (DUET na dno)
+            autoSorted.sort((a, b) -> {
+
+                boolean aDuet = "DUET".equals(a.getType());
+                boolean bDuet = "DUET".equals(b.getType());
+
+                // 1) DUET uvek na kraj
+                if (aDuet && !bDuet) {
+                    return 1;
+                }
+                if (!aDuet && bDuet) {
+                    return -1;
+                }
+
+                // 2) ako su oba DUET – sortiraj po artistu pa po pesmi
+                if (aDuet) {
+                    int artistCmp = a.getArtist().compareToIgnoreCase(b.getArtist());
+                    if (artistCmp != 0) {
+                        return artistCmp;
+                    }
+
+                    return a.getSong().compareToIgnoreCase(b.getSong());
+                }
+
+                // 3) normalni – prvo po slovu
+                int letterCmp = a.getLetter().compareToIgnoreCase(b.getLetter());
+                if (letterCmp != 0) {
+                    return letterCmp;
+                }
+
+                // 4) zatim po artistu
+                int artistCmp = a.getArtist().compareToIgnoreCase(b.getArtist());
+                if (artistCmp != 0) {
+                    return artistCmp;
+                }
+
+                // 5) i na kraju po pesmi
+                return a.getSong().compareToIgnoreCase(b.getSong());
+            });
+
         } catch (Exception ex) {
             showError(ex);
         }
@@ -188,7 +261,7 @@ public class ArtistSorterApp extends Application {
         table.getColumns().add(col("Song", Row::songProperty, 200));
 
         TableColumn<Row, String> typeCol = new TableColumn<>("Type");
-        typeCol.setPrefWidth(260);
+        typeCol.setPrefWidth(350);
 
         typeCol.setCellFactory(col -> new CandidateTypeCell(autoSorted, table));
 

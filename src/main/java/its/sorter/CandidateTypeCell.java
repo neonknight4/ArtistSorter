@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package its.sorter;
 
 import java.util.Comparator;
@@ -13,17 +9,15 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.HBox;
 
-/**
- *
- * @author mihailo-jankovic
- */
 class CandidateTypeCell extends TableCell<Row, String> {
 
     private final RadioButton bend = new RadioButton("Bend");
     private final RadioButton person = new RadioButton("Ime+Prezime");
     private final RadioButton pseudo = new RadioButton("Pseudonim");
+    private final RadioButton duet = new RadioButton("Duet");
+
     private final ToggleGroup group = new ToggleGroup();
-    private final HBox box = new HBox(5, bend, person, pseudo);
+    private final HBox box = new HBox(5, bend, person, pseudo, duet);
 
     private final ObservableList<Row> autoSorted;
     private final TableView<Row> table;
@@ -35,22 +29,51 @@ class CandidateTypeCell extends TableCell<Row, String> {
         bend.setToggleGroup(group);
         person.setToggleGroup(group);
         pseudo.setToggleGroup(group);
+        duet.setToggleGroup(group);
 
         bend.setOnAction(e -> move("BEND"));
         person.setOnAction(e -> move("PERSON"));
         pseudo.setOnAction(e -> move("PSEUDONYM"));
+        duet.setOnAction(e -> move("DUET"));
     }
 
     private void move(String type) {
         Row row = table.getItems().get(getIndex());
 
-        String letter = type.equals("PERSON")
-                ? row.getArtist().replaceAll(".*\\s", "").substring(0, 1).toUpperCase(Locale.ROOT)
-                : row.getArtist().substring(0, 1).toUpperCase(Locale.ROOT);
+        String letter;
+
+        if ("PERSON".equals(type)) {
+            letter = row.getArtist()
+                    .replaceAll(".*\\s", "")
+                    .substring(0, 1)
+                    .toUpperCase(Locale.ROOT);
+        } else {
+            // BEND, PSEUDONYM, DUET → prvo slovo
+            letter = row.getArtist()
+                    .substring(0, 1)
+                    .toUpperCase(Locale.ROOT);
+        }
 
         autoSorted.add(new Row(letter, row.getArtist(), row.getSong(), type));
-        autoSorted.sort(Comparator.comparing(Row::getLetter)
-                .thenComparing(Row::getArtist, String.CASE_INSENSITIVE_ORDER));
+
+        // ===== SORT: DUET NA KRAJ =====
+        autoSorted.sort((a, b) -> {
+
+            boolean aDuet = "DUET".equals(a.getType());
+            boolean bDuet = "DUET".equals(b.getType());
+
+            if (aDuet && !bDuet) return 1;
+            if (!aDuet && bDuet) return -1;
+
+            if (aDuet) {
+                return a.getArtist().compareToIgnoreCase(b.getArtist());
+            }
+
+            int letterCmp = a.getLetter().compareToIgnoreCase(b.getLetter());
+            if (letterCmp != 0) return letterCmp;
+
+            return a.getArtist().compareToIgnoreCase(b.getArtist());
+        });
 
         table.getItems().remove(row);
     }
@@ -61,22 +84,18 @@ class CandidateTypeCell extends TableCell<Row, String> {
 
         if (empty) {
             setGraphic(null);
-            group.selectToggle(null); // ← KLJUČNO: reset selekcije
+            group.selectToggle(null);
             return;
         }
 
         Row row = getTableView().getItems().get(getIndex());
 
-        // sinhronizuj UI sa modelom
         switch (row.getType()) {
-            case "BEND" ->
-                group.selectToggle(bend);
-            case "PERSON" ->
-                group.selectToggle(person);
-            case "PSEUDONYM" ->
-                group.selectToggle(pseudo);
-            default ->
-                group.selectToggle(null);
+            case "BEND" -> group.selectToggle(bend);
+            case "PERSON" -> group.selectToggle(person);
+            case "PSEUDONYM" -> group.selectToggle(pseudo);
+            case "DUET" -> group.selectToggle(duet);
+            default -> group.selectToggle(null);
         }
 
         setGraphic(box);
