@@ -35,6 +35,8 @@ Automatski se:
 * uklanjaju prazni redovi
 * ignorišu duplikati **artist + song**
 * ignoriše zapis bez pesme ako izvođač već ima pesmu
+* sortiraju izvodjaci po slovu, artistu pa songu
+* sve kandidate koji počinju sa članom "The" svrstava u bend
 
 ---
 
@@ -51,6 +53,7 @@ Sortiranje:
 
 * **PERSON → po prezimenu**
 * **BEND / PSEUDONYM → po prvom slovu**
+* **DUET**
 
 ---
 
@@ -61,6 +64,7 @@ Sadrži izvođače sa **više reči** koji zahtevaju odluku:
 * Bend
 * Ime + Prezime
 * Pseudonim
+* Duet
 
 Klik na opciju:
 
